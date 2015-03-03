@@ -1,0 +1,6 @@
+C:\Users\john\documents\visual studio 2013\Projects\CAVinCustHost\CAVinCustHost\bin\Debug\CAVinCustHost.exe.config
+C:\Users\john\documents\visual studio 2013\Projects\CAVinCustHost\CAVinCustHost\bin\Debug\CAVinCustHost.exe
+C:\Users\john\documents\visual studio 2013\Projects\CAVinCustHost\CAVinCustHost\bin\Debug\CAVinCustHost.pdb
+C:\Users\john\documents\visual studio 2013\Projects\CAVinCustHost\CAVinCustHost\obj\Debug\CAVinCustHost.csprojResolveAssemblyReference.cache
+C:\Users\john\documents\visual studio 2013\Projects\CAVinCustHost\CAVinCustHost\obj\Debug\CAVinCustHost.exe
+C:\Users\john\documents\visual studio 2013\Projects\CAVinCustHost\CAVinCustHost\obj\Debug\CAVinCustHost.pdb
