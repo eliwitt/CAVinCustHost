@@ -6,10 +6,12 @@ using System.Text;
 using System.Threading.Tasks;
 using System.ServiceModel;
 using System.ServiceModel.Description;
-using CAVinCustHost.CustOrders;
 using System.Net;
 using System.IO;
 using System.Diagnostics;
+using System.Xml.Serialization;
+using System.Runtime.Serialization;
+using System.Xml;
 
 namespace CAVinCustHost
 {
@@ -18,35 +20,8 @@ namespace CAVinCustHost
         static void Main(string[] args)
         {
 
-            callMyServiceClient();
             callMyServiceReq();
 
-        }
-        /// <summary>
-        /// Call the service using the client technique
-        /// </summary>
-        [Conditional("callClient")]
-        private static void callMyServiceClient()
-        {
-            Console.WriteLine("In Client call");
-            try
-            {
-                CustomerOrdersClient theProxy = new CustomerOrdersClient();
-
-                Console.WriteLine("Test 1: list my orders");
-                VPIOrder myOrders = theProxy.GetOrder("C00001", "12412355");
-                Console.WriteLine("{0} {1}", myOrders.OrderNumber, myOrders.Status);
-                //foreach (VPIOrder theOrder in myOrders)
-                //{
-                //    Console.WriteLine("{0} {1}", theOrder.OrderNumber, theOrder.Status);
-                //}
-                Console.WriteLine();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error: " + ex.Message);
-            }
-            Console.WriteLine("Leaving client call");
         }
         /// <summary>
         /// Call the service using the http req technique
@@ -56,39 +31,78 @@ namespace CAVinCustHost
         {
             Console.WriteLine("In ServiceReq");
             Console.WriteLine("Call retrieve orders");
-            string uri = "http://localhost/VinCustOrders/Service1.svc/C00001";
+            string uri = "http://localhost/VPIOrderService/OrderService.svc/C00001";
             HttpWebRequest Ordersrequest = (HttpWebRequest)HttpWebRequest.Create(uri);
             Ordersrequest.Method = "GET";
             using (HttpWebResponse response = (HttpWebResponse)Ordersrequest.GetResponse())
             {
-                using(var responseStream = response.GetResponseStream())
+                System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+                doc.Load(response.GetResponseStream());
+                XmlNodeList theOrders = doc.GetElementsByTagName("CustOrder");
+                List<CustOrder> myorders = GetMyOrders(theOrders);
+                foreach(CustOrder theOrder in myorders)
                 {
-                    using(var reader = new StreamReader(responseStream))
-                    {
-                        //Here you will get response
-                        Console.WriteLine(reader.ReadToEnd());
-                    }
-
+                    Console.WriteLine("order = {0} line = {1} status = {2}",
+                        theOrder.OrderNumber, theOrder.LineNumber, theOrder.StatusText);
                 }
+ 
             }
             Console.WriteLine("");
             Console.WriteLine("Call retrieve orders");
-            uri = "http://localhost/VinCustOrders/Service1.svc/Order/C00001/120894326";
+            uri = "http://localhost/VPIOrderService/OrderService.svc/Order/C00001/10058164";
             HttpWebRequest Orderrequest = (HttpWebRequest)HttpWebRequest.Create(uri);
             Orderrequest.Method = "GET";
+           
             using (HttpWebResponse response = (HttpWebResponse)Orderrequest.GetResponse())
             {
-                using (var responseStream = response.GetResponseStream())
+                System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+                doc.Load(response.GetResponseStream());
+                //List<CustOrder> theOrders = GetMyPro(doc);
+                XmlNodeList theOrders = doc.GetElementsByTagName("CustOrder");
+                List<CustOrder> myorders = GetMyOrders(theOrders);
+                foreach (CustOrder theOrder in myorders)
                 {
-                    using (var reader = new StreamReader(responseStream))
-                    {
-                        //Here you will get response
-                        Console.WriteLine(reader.ReadToEnd());
-                    }
-
+                    Console.WriteLine("order = {0} line = {1} status = {2}", 
+                        theOrder.OrderNumber, theOrder.LineNumber, theOrder.StatusText);
                 }
             }
             Console.WriteLine("Leaving ServiceReq");
         }
+
+        private static List<CustOrder> GetMyOrders(XmlNodeList theOrders)
+        {
+            List<CustOrder> theObjs = new List<CustOrder>();
+            foreach (XmlNode node in theOrders)
+            {
+                CustOrder theObj = new CustOrder();
+                           //Use the reflection to get all the properties of this class object and set those
+                System.Reflection.PropertyInfo[] arrPropInfo = theObj.GetType().GetProperties();
+                for (int i = 0; i < arrPropInfo.Length; i++)
+                {
+                    string xmlname = arrPropInfo[i].Name;
+                    System.Reflection.PropertyInfo propInfo = arrPropInfo[i];
+                    String xmlValue = node[xmlname].InnerText;
+                    Object typeCastedValue = xmlValue;
+                    switch (propInfo.PropertyType.Name)
+                    {
+                        case "Boolean":
+                            typeCastedValue = xmlValue.Equals("true") ? true : false;
+                            break;
+                        case "Int32":
+                            typeCastedValue = Convert.ToInt32(xmlValue);
+                            break;
+                        case "DateTime":
+                            typeCastedValue = Convert.ToDateTime(xmlValue);
+                            break;
+                    }
+
+                    propInfo.SetValue(theObj, typeCastedValue, null);
+                }
+                theObjs.Add(theObj);
+                theObj = null;
+            }
+            return theObjs;
+        }
+
     }
 }
